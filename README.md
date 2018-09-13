@@ -15,4 +15,4 @@ Disable the Consumer experience and Disable the Xbox Services.
 - Reworked the remove app process to function more efficiently 
 
 
-For more inforamtion visit http://sccmtst.com
+For more inforamtion visit http://www.sccmtst.com or http://www.mosacimk.com
