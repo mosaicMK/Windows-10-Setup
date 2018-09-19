@@ -121,6 +121,7 @@ Param(
         [Switch]$DisableAds,
         [Switch]$DisableWindowsStore,
         [Switch]$DisableConnectToInternetUpdates,
+        [switch]$DisableUAC,
         [string]$SetTimeZone,
         [Switch]$JoinDomain,
         [string]$Account,
@@ -278,8 +279,23 @@ Function Disable-XboxServices{
     }
 }
 
-Function Disable-Cortana
-{
+Function Disable-UAC{
+    Add-LogEntry -LogMessage "Disabling UAC"
+    Set-Location HKLM:
+    if (!(test-Path .\Software\Microsoft\Windows\CurrentVersion\policies\system)) {New-Item .\Software\Microsoft\Windows\CurrentVersion\policies\system | Out-Null}
+    try {
+        New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force
+        Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 00000000 -Force
+        Add-LogEntry -LogMessage "SUCCESS: Disabled UAC"
+    }
+    catch {
+        Add-LogEntry -LogMessage "ERROR: Unable to disable UAC: $_" -Messagetype 3
+    }
+    Set-Location $PSScriptRoot
+}
+
+
+Function Disable-Cortana{
     Add-LogEntry -LogMessage "Disabling Cortana"
     $RegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
     $Name = "AllowCortana"
@@ -520,6 +536,7 @@ Function Disable-ConnectToInternetUpdates{
     $Type = "DWORD"
 
     Set-Location HKLM:
+    if (!(test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate")) {New-Item "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" | Out-Null}
     try {
         New-ItemProperty -Path $RegPath -Name $Name -Value $Value -PropertyType $Type -Force -ErrorAction Stop
         Add-LogEntry -LogMessage 'SUCCESS: Connect to Internet for Updates was disabled'
@@ -571,7 +588,11 @@ IF ($StartMenuLayout) {Import-StartMenuLayout}
 #Enable RDP
 IF ($EnableRDP) {Enable-RDP}
 
+#Sets the Tiemzone
 IF ($SetTimeZone) {Set-Time}
+
+#Disabled UAC
+IF ($DisableUAC){Disable-UAC}
 
 #Disbales Xbox Services and stops them
 If ($DisableXboxServices) {Disable-XboxServices}
